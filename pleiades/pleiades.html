@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<body>
+<p id="stats"></p>
+<script>
+var canvas;
+var ctx;
+
+var height = 600;
+var width = 1000;
+
+var spacecraftHeight = 32;
+var spacecraftWidth = 16;
+var rotationOffset = Math.PI / 2;
+
+// TODO: Create a better-looking spacecraft :-/
+var spacecraftImg = new Image();
+spacecraftImg.src = 'spacecraft.png';
+
+var keysDown = [];
+
+addEventListener("keydown", function (e) {
+    keysDown[e.keyCode] = true;
+});
+
+addEventListener("keyup", function (e) {
+    delete keysDown[e.keyCode];
+});
+
+var spacecraft = {
+    x: width / 2,
+    y: height / 2,
+    velocityX: 0,
+    velocityY: 0,
+    acceleration: 0.06,
+    rotSpeed: Math.PI / 50,
+    direction: 0,
+    draw: function() {
+        ctx.save();
+        ctx.translate(this.x, this.y); // sets origin of canvas to what is now (x, y)
+        ctx.rotate(this.direction);
+        ctx.translate(-spacecraftWidth / 2, -spacecraftHeight / 2);
+        ctx.drawImage(spacecraftImg, 0, 0, spacecraftWidth, spacecraftHeight);
+        ctx.restore(); 
+    },
+    update: function() {
+        // Ensure spacecraft is always on canvas
+        // TODO: Handle rotation cases
+        if (this.y + spacecraftHeight < 0) {
+            this.y = height;
+        } else if (this.y > height) {
+            this.y = 0 - spacecraftHeight;
+        }
+        if (this.x + spacecraftWidth < 0) {
+            this.x = width;
+        } else if (this.x > width) {
+            this.x = 0 - spacecraftWidth;
+        }
+
+        /*
+        38 UP:    Accelerate
+        40 DOWN:  Deccelerate - NOT SUPPORTED IN THE ORIGINAL GAME
+        37 LEFT:  Rotate counterclockwise
+        39 RIGHT: Rotate clockwise
+        */
+        if (38 in keysDown) {
+            this.velocityX += this.acceleration * Math.cos(this.direction - rotationOffset);
+            this.velocityY += this.acceleration * Math.sin(this.direction - rotationOffset);
+        }
+        if (37 in keysDown) {
+            this.direction -= this.rotSpeed;
+        }
+        if (39 in keysDown) {
+            this.direction += this.rotSpeed;
+        }
+
+        this.y += this.velocityY;
+        this.x += this.velocityX;
+    }
+}
+
+function update() {
+    spacecraft.update();
+    document.getElementById("stats").innerHTML = 
+               "X: " + spacecraft.x.toFixed(3) + "; "
+             + "Y: " +  spacecraft.y.toFixed(3) + "; "
+             + "Acc: " + spacecraft.acceleration.toFixed(3) + "; "
+             + "Veloc: " + Math.sqrt(spacecraft.velocityX * spacecraft.velocityX + spacecraft.velocityY * spacecraft.velocityY).toFixed(3) + "; "
+             + "VelocX: " + spacecraft.velocityX.toFixed(3) + "; "
+             + "VelocY: " + spacecraft.velocityY.toFixed(3) + "; "
+             + "Dir: " + (((180 / Math.PI) * (spacecraft.direction - rotationOffset)) % 360).toFixed(3) + "; "
+             + (38 in keysDown ? "<span style='color:red'>[THRUSTING]</span>" : "");
+
+}
+
+function render() {
+    ctx.fillStyle = "rgb(1, 1, 20)";
+    ctx.fillRect(0, 0, width, height);
+    spacecraft.draw();
+}
+
+function run() {
+    update();
+    render();
+    window.requestAnimationFrame(run);
+}
+
+function main() {
+    canvas = document.createElement("canvas");
+    canvas.height = height;
+    canvas.width = width;
+
+    ctx = canvas.getContext("2d");
+    document.body.appendChild(canvas);
+
+    run();
+}
+
+main();
+</script>
+</body>
+</html>
